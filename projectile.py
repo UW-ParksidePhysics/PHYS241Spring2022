@@ -1,40 +1,75 @@
-#  Calculate kinetic energy and potential energies
-#       (one-dimensional, one particle)
+# Given a projectile of some mass, initial velocity,
+#   calculate the kinetic energy, potential energy, and total energy of the projectile over time
+#   (in one dimension)
 
+from python.energy import kinetic_energy, gravitational_potential_energy
 import numpy as np
+import matplotlib.pyplot as plt
+from urllib import request
+
+def calculate_all_energies(initial_velocity, initial_height, gravitational_acceleration, mass):
+    # t_f = v_0 / g + sqrt(v_0^2 + g y_0) / g
+    final_time = (initial_velocity / gravitational_acceleration) \
+                 + np.sqrt(initial_velocity**2 + gravitational_acceleration*initial_height) /\
+                 gravitational_acceleration
+    # t = [0, t_f]
+    times = np.linspace(0., final_time)
+    # h = h(t)
+    heights = height(times, initial_height, initial_velocity, -gravitational_acceleration)
+    # v = v(t)
+    velocities = velocity(times, initial_velocity, -gravitational_acceleration)
+    #
+    kinetic_energies = kinetic_energy(mass, velocities)
+    potential_energies = gravitational_potential_energy(mass, heights,
+                                                        gravitational_acceleration=gravitational_acceleration)
+    total_energies = kinetic_energies + potential_energies
+
+    return times, [kinetic_energies, potential_energies, total_energies]
 
 
-def kinetic_energy(mass, velocity):
-    """
-    T = (1/2)mv^2
-    :return: T (float)
-    """
-    kinetic = 0.5 * mass * velocity ** 2
-    return kinetic
+def height(time, initial_height, initial_velocity, acceleration):
+    final_height = initial_height + initial_velocity*time + 0.5 * acceleration * time**2
+    return final_height
 
 
-def gravitational_potential_energy(mass, height, gravitational_acceleration=9.80665):
-    """
-    U_g = m g h
-    :param mass: (float)                 Mass of object in kilograms
-    :param height: (float)               Height of object above ground in meters
-    :param gravitational_acceleration: (float, optional) Acceleration due to gravity in meters per second-square
-    :return: U_g (float)                 Gravitational potential energy (near surface of a large body)
-    """
-    potential_energy = mass * gravitational_acceleration * height
-    return potential_energy
+def velocity(time, initial_velocity, acceleration):
+    final_velocity = initial_velocity + time * acceleration
+    return final_velocity
 
 
-if __name__ == '__main__':
-    print('Running energy.py as its own script...')
-    test_mass = 2.0  # kg
-    test_speed = 3.0  # m/s
+def plot_all_energies(all_energies, times, planet=''):
+    plt.plot(times, all_energies[0], color='red', label=r'$T$')
+    plt.plot(times, all_energies[1], color='green', label=r'$U$')
+    plt.plot(times, all_energies[2], color='black', label=r'$E$')
+    plt.xlabel(r'$t$ (s)')
+    plt.ylabel(r'$E, T, U$ (J)')
+    if len(planet) > 0:
+        plt.text(np.mean(times), 0.5*np.mean(all_energies[2]), planet[0], fontsize=18)
+    plt.legend()
+    plt.show()
 
-    test_kinetic_energy = kinetic_energy(test_mass, test_speed)
-    # 0.5 * 2.0 * 3.0^2 = 9 J
-    print(f'T({test_mass:.0f} kg, {test_speed:.0f} m/s) = {test_kinetic_energy:.1f} J')
+    return
 
-    test_height = 5.0  # m
-    test_potential_energy = gravitational_potential_energy(test_mass, test_height)
-    # 2.0 * 9.80665 * 5.0 = 98.0665 J
-    print(f'U({test_mass:.0f} kg, {test_height:.0f} m) = {test_potential_energy:.1f} J')
+
+# Parameters
+projectile_mass = 2.0  # kg
+projectile_initial_velocity = 3.0  # m/s
+projectile_initial_height = 5.0  # m
+standard_gravity = 9.80665  # m/s
+
+planetary_data = {
+    'Earth': {'surface acceleration': 9.80665, 'radius': 6.3568e6},
+    'Mars': {'surface acceleration': 3.71, 'radius': 3.3962e6},
+}
+
+# url = 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/index.htm'
+# url = 'http://www.python.org/'
+# with request.urlopen(url) as file:
+#     print(file.read())
+
+for planet in planetary_data:
+    acceleration = planetary_data[planet]['surface acceleration']
+    times, energies = calculate_all_energies(projectile_initial_velocity, projectile_initial_height,
+                                              acceleration, projectile_mass)
+    plot_all_energies(energies, times, planet=planet)
+
