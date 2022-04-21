@@ -23,15 +23,14 @@ planetary_data = planetary_data.drop([0])
 planetary_data.rename(columns={np.nan: "Name"},
                       inplace=True)
 
-
 # Create dictionary to store units
 column_units = {}
 column_headers = []
 for column in planetary_data:
-    try:
+    if len(column.split(' (')) > 1:
         name, unit = column.split(' (')
-        column_units[name] = '('+unit
-    except:
+        column_units[name] = '(' + unit
+    else:
         name = column
         column_units[name] = ''
     column_headers.append(name.strip('?'))
